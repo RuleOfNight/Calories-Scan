@@ -17,3 +17,8 @@
 <p><b>Các chế độ ăn đặc biệt:</b> Gợi ý thực đơn cho người dùng tùy theo tình trạng cơ thể của người dùng</p>
 <p><b>Ứng dụng AI thông minh:</b> Cho phép người dùng upload ảnh thậm chí là camera thời gian thực để tính toán và phân loại nhanh chóng thực phẩm</p>
 <p><b>Hệ thống phần thưởng:</b> Con người sẽ có động lực khi đạt được thứ gì đó, vậy nên chương trình có hệ thống thành tựu dành cho những người đạt được mốc yêu cầu nhất định(ví dụ uống đủ nước mỗi ngày)</p>
+
+---
+
+<h2>Chương trình trả phí:</h2>
+<p>    Để app ngày càng cải tiến thì không thể không cập nhật thêm những dữ liệu hình ảnh từ người dùng để cải thiện kết quả. Tuy nhiên có một số người không thích việc thông tin của mình bị sử dụng nên nếu them gia chương trình trả phí(Premium), dữ liệu của người dùng sẽ không được sử dụng để huấn luyện model. Những người đăng kí chương trình này cũng sẽ được quyền trải nghiệm một số tính năng độc quyền trong tương lai ví dụ như trợ lí ảo thông minh</p>
