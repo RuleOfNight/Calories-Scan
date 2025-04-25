@@ -9,3 +9,11 @@
   <li>CSDL: MongoDB</li>
   <li>Languages: Swift, Python</li>
 </ul>
+
+<h2>Các chức năng chính</h2>
+<h4><b>Chương trình gồm có các tính năng như:</b></h4>
+<p><b>Personality: </b> Mỗi người dùng có thể tạo tài khoản cá nhân bằng số điện thoại</p>
+<p><b>Theo dõi lượng dinh dưỡng:</b> Dựa vào các hình ảnh người dùng cung cấp, hệ thống sẽ thống kê lượng chất dinh dưỡng cơ thể nạp vào bao gồm calo, chất béo, chất đạm,...</p>
+<p><b>Các chế độ ăn đặc biệt:</b> Gợi ý thực đơn cho người dùng tùy theo tình trạng cơ thể của người dùng</p>
+<p><b>Ứng dụng AI thông minh:</b> Cho phép người dùng upload ảnh thậm chí là camera thời gian thực để tính toán và phân loại nhanh chóng thực phẩm</p>
+<p><b>Hệ thống phần thưởng:</b> Con người sẽ có động lực khi đạt được thứ gì đó, vậy nên chương trình có hệ thống thành tựu dành cho những người đạt được mốc yêu cầu nhất định(ví dụ uống đủ nước mỗi ngày)</p>
