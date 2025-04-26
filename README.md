@@ -7,7 +7,7 @@
 <ul>
   <li>Deep learning: PyTorch, OpenCV</li>
   <li>CSDL: MongoDB</li>
-  <li>Languages: Swift, Python</li>
+  <li>Languages: Kotlin, Python</li>
 </ul>
 
 <h2>Các chức năng chính</h2>
