@@ -6,10 +6,20 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Camera, Image as ImageIcon, Loader2, FileText } from 'lucide-react';
+import { Upload, Camera, Image as ImageIcon, Loader2, FileText, ScanSearch } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState, type ChangeEvent, useRef } from 'react';
+
+
+interface NutritionInfo {
+  foodName: string;
+  calories: number;
+  carbohydrates: number;
+  protein: number;
+  fat: number;
+  sugar: number;
+}
 
 export default function ScanFoodPage() {
   const { toast } = useToast();
@@ -19,6 +29,7 @@ export default function ScanFoodPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [identifiedFood, setIdentifiedFood] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [nutritionInfo, setNutritionInfo] = useState<NutritionInfo | null>(null);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -49,27 +60,98 @@ export default function ScanFoodPage() {
 
     setPreviewUrl("https://placehold.co/600x400.png?text=Camera+Feed+Placeholder");
     dataAiHint: "camera placeholder"
-    setSelectedFile(null); // Clear file if camera is used
+    setSelectedFile(null);
     setIdentifiedFood("Placeholder Food (from Camera)"); // Mock identification
   };
-  
-  const processImage = async () => {
-    if (!selectedFile && !identifiedFood) { // Allow processing if food already identified (e.g. from camera mock)
-        toast({ title: "No Image", description: "Please select an image or use the camera.", variant: "destructive"});
-        return;
-    }
+
+const processImage = async () => {
+  try {
     setIsProcessing(true);
     
-    // Mock AI processing
-    await new Promise(resolve => setTimeout(resolve, 2000)); 
+    if (!selectedFile) {
+      toast({ title: "Error", description: "Please select an image first", variant: "destructive" });
+      return;
+    }
 
-    // Mock identification result
-    const mockFoodName = selectedFile ? selectedFile.name.split('.')[0].replace(/[-_]/g, ' ') : identifiedFood || "Unknown Food";
-    setIdentifiedFood(mockFoodName);
+    const apiKey = process.env.NEXT_PUBLIC_LOGMEAL_API_KEY;
+    if (!apiKey) {
+      throw new Error('API key not found');
+    }
+
+    const formData = new FormData();
+    formData.append('image', selectedFile);
+
+    // image segmentation
+    const segmentationResponse = await fetch('https://api.logmeal.com/v2/image/segmentation/complete', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: formData
+    });
+
+    if (!segmentationResponse.ok) {
+      throw new Error(`Segmentation failed: ${segmentationResponse.statusText}`);
+    }
+
+    const segmentationData = await segmentationResponse.json();
+    // console.log('Segmentation response:', segmentationData); // Debug log
+    const foodId = segmentationData.imageId;
+    if (!foodId) {
+      throw new Error('No food ID in segmentation response');
+    }
+
+    // nutritional info
+    const nutritionResponse = await fetch('https://api.logmeal.com/v2/recipe/nutritionalInfo', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ imageId: foodId })
+    });
+
+    if (!nutritionResponse.ok) {
+      throw new Error(`Nutrition fetch failed: ${nutritionResponse.statusText}`);
+    }
+
+    const nutritionData = await nutritionResponse.json();
+    // console.log('Nutrition response:', nutritionData); // Debug log
+
+
+    if (!nutritionData || typeof nutritionData !== 'object') {
+      throw new Error('Invalid nutrition data response');
+    }
+
+
+    // Mapping
+    const nutritionalInfo = {
+      foodName: nutritionData.foodName?.[0] || "Unknown Food",
+      calories: nutritionData.nutritional_info?.calories || 0,
+      carbohydrates: nutritionData.nutritional_info?.totalNutrients?.CHOCDF?.quantity || 0,
+      protein: nutritionData.nutritional_info?.totalNutrients?.PROCNT?.quantity || 0,
+      fat: nutritionData.nutritional_info?.totalNutrients?.FAT?.quantity || 0,
+      sugar: nutritionData.nutritional_info?.totalNutrients?.SUGAR?.quantity || 0,
+    };
+    // console.log('Mapped nutrition info:', nutritionalInfo);
+
+
     
+    setNutritionInfo(nutritionalInfo);
+    setIdentifiedFood(nutritionalInfo.foodName);
+    toast({ title: "Success", description: "Food analyzed successfully!" });
+
+  } catch (error) {
+    console.error('Full error details:', error);
+    toast({ 
+      title: "Error", 
+      description: error instanceof Error ? error.message : "Failed to process image", 
+      variant: "destructive" 
+    });
+  } finally {
     setIsProcessing(false);
-    toast({ title: "Food Identified!", description: `Identified as: ${mockFoodName}. Check nutrition details.` });
-  };
+  }
+};
 
   const viewNutritionDetails = () => {
     if (identifiedFood) {
@@ -79,52 +161,83 @@ export default function ScanFoodPage() {
     }
   };
 
-  return (
+return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Scan or Upload Food Item</CardTitle>
-          <CardDescription>Use your camera or upload an image to identify food and get its nutritional information.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-            <div className="space-y-4">
-              <Button onClick={handleUploadClick} className="w-full" variant="outline" disabled={isProcessing}>
-                <Upload className="mr-2 h-5 w-5" /> Upload Image
-              </Button>
-              <Input type="file" accept="image/*" onChange={handleFileChange} className="hidden" ref={fileInputRef} />
-              <Button onClick={handleCameraClick} className="w-full" variant="outline" disabled={isProcessing}>
-                <Camera className="mr-2 h-5 w-5" /> Use Camera
-              </Button>
-            </div>
-            <div className="flex items-center justify-center p-4 border-2 border-dashed border-border rounded-lg min-h-[200px] bg-muted/30">
-              {previewUrl ? (
-                <Image src={previewUrl} alt="Selected food item" width={300} height={200} className="max-w-full max-h-[200px] object-contain rounded-md" />
-              ) : (
-                <div className="text-center text-muted-foreground">
-                  <ImageIcon className="mx-auto h-12 w-12 mb-2" />
-                  <p>Image preview will appear here</p>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          { (selectedFile || (previewUrl && identifiedFood)) && ( // Show process button if there's a file or a camera mock image
-            <Button onClick={processImage} className="w-full mt-4" disabled={isProcessing || !!identifiedFood}>
-              {isProcessing ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ScanLine className="mr-2 h-5 w-5" />}
-              {identifiedFood ? `Identified: ${identifiedFood}` : "Identify Food"}
-            </Button>
-          )}
+          <CardHeader>
+              <CardTitle className="text-2xl">Scan or Upload Food Item</CardTitle>
+              <CardDescription>Use your camera or upload an image to identify food and get its nutritional information.</CardDescription>
+              <CardDescription><small>(.jpg or .jepg)</small>.</CardDescription>
+          </CardHeader>
 
-        </CardContent>
-        {identifiedFood && (
-            <CardFooter>
-                <Button onClick={viewNutritionDetails} className="w-full" variant="default">
-                    <FileText className="mr-2 h-5 w-5" /> View Nutrition Details for {identifiedFood}
-                </Button>
-            </CardFooter>
-        )}
+          <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                <div className="space-y-4">
+                  <Button onClick={handleUploadClick} className="w-full" variant="outline" disabled={isProcessing}>
+                      <Upload className="mr-2 h-5 w-5" /> Upload Image
+                  </Button>
+                  <Input type="file" accept="image/*" onChange={handleFileChange} className="hidden" ref={fileInputRef} />
+                  <Button onClick={handleCameraClick} className="w-full" variant="outline" disabled={isProcessing}>
+                      <Camera className="mr-2 h-5 w-5" /> Use Camera
+                  </Button>
+              </div>
+
+              <div className="flex items-center justify-center p-4 border-2 border-dashed border-border rounded-lg min-h-[200px] bg-muted/30">
+                {previewUrl ? (
+                  <Image src={previewUrl} alt="Selected food item" width={300} height={200} className="max-w-full max-h-[200px] object-contain rounded-md" />
+                ) : (
+                    <div className="text-center text-muted-foreground">
+                        <ImageIcon className="mx-auto h-12 w-12 mb-2" />
+                        <p>Image preview will appear here</p>
+                    </div>
+                )}
+              </div>
+            </div>
+            
+            {(selectedFile || (previewUrl && !identifiedFood)) && (
+              <Button onClick={processImage} className="w-full mt-4" disabled={isProcessing}>
+                {isProcessing ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ScanSearch className="mr-2 h-5 w-5" />}
+                {isProcessing ? "Processing..." : "Identify Food"}
+              </Button>
+            )}
+          </CardContent>
       </Card>
+
+
+      {nutritionInfo && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Nutrition Information</CardTitle>
+            <CardDescription>Analysis results for <strong>{nutritionInfo.foodName}</strong></CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Calories</p>
+                  <p className="text-2xl font-bold">{nutritionInfo.calories?.toFixed(1) || 0} kcal</p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Carbohydrates</p>
+                  <p className="text-2xl font-bold">{nutritionInfo.carbohydrates?.toFixed(1) || 0} kcal</p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Protein</p>
+                  <p className="text-2xl font-bold">{nutritionInfo.protein?.toFixed(1) || 0} kcal</p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Fat</p>
+                  <p className="text-2xl font-bold">{nutritionInfo.fat?.toFixed(1) || 0} kcal</p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Sugar</p>
+                  <p className="text-2xl font-bold">{nutritionInfo.sugar?.toFixed(1) || 0} kcal</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -28,7 +28,7 @@ graph TD
     B -->|Yes| C[Barcode Processing]
     B -->|No| D[Food Recognition]
     C --> E[API Lookup - OpenFoodFacts]
-    D --> F[USDA Food Search]
+    D --> F[API Lookup - LogMeal]
     E --> G[Nutrition Data]
     F --> G
     G --> H[Portion Adjustment]
@@ -46,7 +46,7 @@ graph TD
 
 1. Clone the repository:
 ```bash
-git clone [repository-url]
+git clone https://github.com/RuleOfNight/Calories-Scan.git
 cd Calories-Scan
 ```
 
@@ -69,13 +69,14 @@ yarn dev
 ## Project Structure
 
 ```
-src/
-├── ai/           # AI integration and flows
-├── app/          # Next.js app router pages
-├── components/   # Reusable UI components
-├── hooks/        # Custom React hooks
-├── lib/          # Utility functions
-└── types/        # TypeScript type definitions
+📂src/
+├── 📂ai/           # AI integration and flows
+├── 📂app/          # Next.js app router pages
+├── 📂components/   # Reusable UI components
+├── 📂hooks/        # Custom React hooks
+├── 📂lib/          # Utility functions
+├── 📂types/        # TypeScript type definitions
+└── 📄README.md/
 ```
 
 ## Main Features Breakdown
@@ -104,3 +105,4 @@ src/
 - Built with [Next.js](https://nextjs.org/)
 - UI components from [shadcn/ui](https://ui.shadcn.com/)
 - Icons by [Lucide](https://lucide.dev/)
+- Nutritional info by [LogMeal](https://api.logmeal.com/api/docs/)
