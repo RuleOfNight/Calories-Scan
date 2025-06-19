@@ -161,7 +161,21 @@ export default function NutritionPage() {
                     );
                   })}
                 </div>
-
+                <Button className="mt-6 w-full" onClick={() => {
+                  const prev = JSON.parse(localStorage.getItem('nutri_daily') || '{}');
+                  const updated = {
+                    calories: (prev.calories || 0) + (nutritionData.calories || 0),
+                    carbohydrates: (prev.carbohydrates || 0) + (nutritionData.carbohydrates || 0),
+                    protein: (prev.protein || 0) + (nutritionData.protein || 0),
+                    fat: (prev.fat || 0) + (nutritionData.fat || 0),
+                    sugar: (prev.sugar || 0) + (nutritionData.sugar || 0),
+                    water: prev.water || 0,
+                  };
+                  localStorage.setItem('nutri_daily', JSON.stringify(updated));
+                  toast({ title: 'Added!', description: 'Nutrition added to your daily progress.' });
+                }}>
+                  Add to Daily Progress
+                </Button>
               </CardContent>
             </Card>
             </>

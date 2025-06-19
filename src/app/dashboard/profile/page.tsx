@@ -61,6 +61,32 @@ export default function ProfilePage() {
     }
   }, [user]);
 
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('nutri_daily');
+      if (stored) {
+        setNutrients(JSON.parse(stored));
+      }
+    }
+  }, []);
+
+  
+  // Reset daily
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const today = new Date().toISOString().slice(0, 10);
+      const lastDate = localStorage.getItem('nutri_daily_date');
+      if (lastDate !== today) {
+
+        const empty = { calories: 0, carbohydrates: 0, protein: 0, fat: 0, sugar: 0, water: 0 };
+        setNutrients(empty);
+        localStorage.setItem('nutri_daily', JSON.stringify(empty));
+        localStorage.setItem('nutri_daily_date', today);
+      }
+    }
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     const numValue = name === 'age' || name === 'weight' || name === 'height' ? parseFloat(value) : value;
@@ -172,32 +198,75 @@ export default function ProfilePage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-6 justify-center">
-            {NUTRIENTS.map((nutrient) => (
-              <div key={nutrient.key} className="flex flex-col items-center">
-                <ResponsiveContainer width={120} height={120}>
-                  <RadialBarChart
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={55}
-                    barSize={15}
-                    data={[{ name: nutrient.label, value: Math.min(nutrients[nutrient.key], nutrient.max), fill: nutrient.color }]}
-                  >
-                    <PolarAngleAxis type="number" domain={[0, nutrient.max]} angleAxisId={0} tick={false} />
-                    <RadialBar
-                      minAngle={15}
-                      background
-                      clockWise
-                      dataKey="value"
-                      cornerRadius={10}
-                    />
-                  </RadialBarChart>
-                </ResponsiveContainer>
-                <span className="mt-2 font-semibold text-sm">{nutrient.label}</span>
-                <span className="text-xs text-muted-foreground">{nutrients[nutrient.key]} / {nutrient.max} {nutrient.key === 'water' ? 'ml' : nutrient.key === 'calories' ? 'kcal' : 'g'}</span>
-              </div>
-            ))}
+            {NUTRIENTS.map((nutrient) => {
+              type NutrientKey = keyof typeof nutrients;
+              const key = nutrient.key as NutrientKey;
+              return (
+                <div key={nutrient.key} className="flex flex-col items-center">
+                  <ResponsiveContainer width={120} height={120}>
+                    <RadialBarChart
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={55}
+                      barSize={15}
+                      data={[{ name: nutrient.label, value: Math.min(nutrients[key], nutrient.max), fill: nutrient.color }]}
+                    >
+                      <PolarAngleAxis type="number" domain={[0, nutrient.max]} angleAxisId={0} tick={false} />
+                      <RadialBar
+                        background
+                        dataKey="value"
+                        cornerRadius={10}
+                      />
+                    </RadialBarChart>
+                  </ResponsiveContainer>
+                  <span className="mt-2 font-semibold text-sm">{nutrient.label}</span>
+                  <span className="text-xs text-muted-foreground">{nutrients[key]} / {nutrient.max} {nutrient.key === 'water' ? 'ml' : nutrient.key === 'calories' ? 'kcal' : 'g'}</span>
+                  {nutrient.key === 'water' && (
+                    <form
+                      onSubmit={e => {
+                        e.preventDefault();
+                        const form = e.target as HTMLFormElement;
+                        const input = form.elements.namedItem('waterInput') as HTMLInputElement;
+                        const addWater = parseInt(input.value, 10) || 0;
+                        if (addWater > 0) {
+                          const updated = { ...nutrients, water: nutrients.water + addWater };
+                          setNutrients(updated);
+                          localStorage.setItem('nutri_daily', JSON.stringify(updated));
+                          toast({ title: 'Added!', description: `Added ${addWater}ml water.` });
+                          input.value = '';
+                        }
+                      }}
+                      className="flex flex-col items-center mt-2 gap-1"
+                    >
+                      <Input
+                        name="waterInput"
+                        type="number"
+                        min={0}
+                        step={50}
+                        placeholder="Add water (ml)"
+                        className="w-24 text-xs"
+                      />
+                      <Button type="submit" size="sm" className="mt-1">Add Water</Button>
+                    </form>
+                  )}
+                </div>
+              );
+            })}
           </div>
+          <Button
+            variant="outline"
+            className="mt-6 w-full"
+            onClick={() => {
+              const empty = { calories: 0, carbohydrates: 0, protein: 0, fat: 0, sugar: 0, water: 0 };
+              setNutrients(empty);
+              localStorage.setItem('nutri_daily', JSON.stringify(empty));
+              localStorage.setItem('nutri_daily_date', new Date().toISOString().slice(0, 10));
+              toast({ title: 'Reset!', description: 'Daily nutrition progress has been reset.' });
+            }}
+          >
+            Reset Daily Progress
+          </Button>
         </CardContent>
       </Card>
     </div>
