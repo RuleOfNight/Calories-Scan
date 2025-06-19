@@ -22,17 +22,18 @@ A modern web application for tracking nutrition information and getting healthy 
 - **Authentication:** Built-in auth system
 - **AI Integration:** Custom AI flows for food suggestions
 
+## System Architecture (Mermaid)
+
 ```mermaid
-graph TD
-    A[Input Image] --> B{Has Barcode?}
-    B -->|Yes| C[Barcode Processing]
-    B -->|No| D[Food Recognition]
-    C --> E[API Lookup - OpenFoodFacts]
-    D --> F[API Lookup - LogMeal]
-    E --> G[Nutrition Data]
-    F --> G
-    G --> H[Portion Adjustment]
-    H --> I[Display/Output]
+flowchart TD
+    A[User] -->|Scan food image| B(LogMeal API)
+    B -->|Detect food + Nutrition| C[Show nutrition info]
+    C -->|Add to daily| D[Save to localStorage]
+    A -->|Suggest food| E(Gemini API)
+    E -->|Return nutrition/alternatives| F[Show suggestion]
+    F -->|Add to daily| D
+    D -->|Profile page| G[Show daily progress charts]
+    G -->|Reset/Auto reset daily| D
 ```
 
 ## Getting Started
