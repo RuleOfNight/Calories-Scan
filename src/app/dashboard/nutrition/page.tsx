@@ -9,28 +9,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from '@/hooks/use-toast';
 import { NutritionData } from '@/types';
 import { suggestAlternativeFoods, SuggestAlternativeFoodsInput } from '@/ai/flows/food-suggestions';
+import { getFoodNutrition } from '@/ai/flows/food-nutrition';
 import { Loader2, Search, Lightbulb, RefreshCw } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import React, { useState, useEffect, FormEvent } from 'react';
 import Image from 'next/image';
-
-
-
-// Mock function
-const fetchMockNutritionData = async (foodName: string): Promise<NutritionData> => {
-  await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-  // Simple mock data based on food name
-  const baseCalories = foodName.length * 20 + 50;
-  return {
-    foodName: foodName,
-    calories: Math.floor(baseCalories + Math.random() * 50),
-    protein: Math.floor(baseCalories / 20 + Math.random() * 5),
-    carbs: Math.floor(baseCalories / 10 + Math.random() * 10),
-    fat: Math.floor(baseCalories / 30 + Math.random() * 3),
-    fiber: Math.floor(baseCalories / 50 + Math.random() * 2),
-    sugar: Math.floor(baseCalories / 25 + Math.random() * 5),
-  };
-};
 
 
 
@@ -41,7 +24,7 @@ export default function NutritionPage() {
   const { toast } = useToast();
   const [foodName, setFoodName] = useState(initialFood);
   const [nutritionData, setNutritionData] = useState<NutritionData | null>(null);
-  const [quantityGrams, setQuantityGrams] = useState<number | ''>('');
+
   const [isLoadingData, setIsLoadingData] = useState(false);
 
   const [dietaryRestrictions, setDietaryRestrictions] = useState('');
@@ -59,9 +42,18 @@ export default function NutritionPage() {
     setIsLoadingData(true);
     setNutritionData(null);
     try {
-      const data = await fetchMockNutritionData(foodToFetch);
+      const result = await getFoodNutrition({ foodName: foodToFetch });
+      const data: NutritionData = {
+        foodName: result.foodName,
+        calories: result.calories,
+        carbohydrates: result.carbohydrates,
+        protein: result.protein,
+        fat: result.fat,
+        sugar: result.sugar
+      };
       setNutritionData(data);
     } catch (error) {
+      console.error('Error fetching nutrition data:', error);
       toast({ title: "Error", description: "Could not fetch nutrition data.", variant: "destructive" });
     } finally {
       setIsLoadingData(false);
@@ -150,23 +142,11 @@ export default function NutritionPage() {
           {nutritionData && !isLoadingData && (
             <>
             {/* Input for quantity in grams */}
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="quantityGrams">Quantity (grams)</Label>
-              <Input 
-                id="quantityGrams"
-                type="number"
-                placeholder="e.g., 150"
-                value={quantityGrams}
-                onChange={(e) => setQuantityGrams(Number(e.target.value))}
-                min="1"
-              />
-            </div>
-
 
             <Card className="bg-secondary/30">
               <CardHeader>
                 <CardTitle className="text-xl text-primary">{nutritionData.foodName}</CardTitle>
-                <CardDescription>Nutritional values per 100g (mock data)</CardDescription>
+                <CardDescription>Nutritional values per standard serving size</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
