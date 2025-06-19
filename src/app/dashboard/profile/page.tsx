@@ -11,6 +11,16 @@ import { calculateBMI } from '@/lib/utils';
 import { useState, type FormEvent, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save } from "lucide-react";
+import { ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
+
+const NUTRIENTS = [
+  { key: 'calories', label: 'Calories', color: '#f59e42', max: 2500 },
+  { key: 'carbohydrates', label: 'Carbs', color: '#38bdf8', max: 300 },
+  { key: 'protein', label: 'Protein', color: '#22c55e', max: 150 },
+  { key: 'fat', label: 'Fat', color: '#f43f5e', max: 70 },
+  { key: 'sugar', label: 'Sugar', color: '#eab308', max: 50 },
+  { key: 'water', label: 'Water', color: '#0ea5e9', max: 2000 }, // ml
+];
 
 export default function ProfilePage() {
   const { user, updateUserProfile, loading: authLoading } = useAuth();
@@ -25,6 +35,14 @@ export default function ProfilePage() {
   });
   const [bmi, setBmi] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [nutrients, setNutrients] = useState({
+    calories: 0,
+    carbohydrates: 0,
+    protein: 0,
+    fat: 0,
+    sugar: 0,
+    water: 0,
+  });
 
   useEffect(() => {
     if (user) {
@@ -145,6 +163,42 @@ export default function ProfilePage() {
             </Button>
           </CardFooter>
         </form>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl">Daily Nutrition Progress</CardTitle>
+          <CardDescription>Track your daily intake of nutrients and water.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-6 justify-center">
+            {NUTRIENTS.map((nutrient) => (
+              <div key={nutrient.key} className="flex flex-col items-center">
+                <ResponsiveContainer width={120} height={120}>
+                  <RadialBarChart
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={40}
+                    outerRadius={55}
+                    barSize={15}
+                    data={[{ name: nutrient.label, value: Math.min(nutrients[nutrient.key], nutrient.max), fill: nutrient.color }]}
+                  >
+                    <PolarAngleAxis type="number" domain={[0, nutrient.max]} angleAxisId={0} tick={false} />
+                    <RadialBar
+                      minAngle={15}
+                      background
+                      clockWise
+                      dataKey="value"
+                      cornerRadius={10}
+                    />
+                  </RadialBarChart>
+                </ResponsiveContainer>
+                <span className="mt-2 font-semibold text-sm">{nutrient.label}</span>
+                <span className="text-xs text-muted-foreground">{nutrients[nutrient.key]} / {nutrient.max} {nutrient.key === 'water' ? 'ml' : nutrient.key === 'calories' ? 'kcal' : 'g'}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
       </Card>
     </div>
   );
