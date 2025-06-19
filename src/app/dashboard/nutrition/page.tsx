@@ -15,6 +15,7 @@ import React, { useState, useEffect, FormEvent } from 'react';
 import Image from 'next/image';
 
 
+
 // Mock function
 const fetchMockNutritionData = async (foodName: string): Promise<NutritionData> => {
   await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
